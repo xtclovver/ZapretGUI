@@ -29,6 +29,7 @@ jobs:
         arch: ${{ matrix.os == 'windows-latest' && 'win64_mingw' || 'linux_gcc_64' }}
         path: ${{ matrix.os == 'windows-latest' && 'C:\\Qt' || '/opt/Qt' }}
         modules: 'qtcharts'
+        tools: ${{ matrix.os == 'windows-latest' && 'tools_mingw1310' || '' }}
         install-deps: 'true'
 
     - name: Configure CMake
