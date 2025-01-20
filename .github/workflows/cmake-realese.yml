@@ -38,15 +38,19 @@ jobs:
         version: 1.65.0
         
     - id: patch_conan
+      if: matrix.os == 'windows-latest'
       run: conan profile new default --detect && conan profile update settings.compiler.libcxx=libstdc++11 default
       
     - id: run_conan
+      if: matrix.os == 'windows-latest'
       run: cd ${GITHUB_WORKSPACE}/app && conan install --generator cmake_find_package --install-folder ../build/conan-dependencies .
       
     - id: cmake
+      if: matrix.os == 'windows-latest'
       run: cd ${GITHUB_WORKSPACE}/app && cmake -B../build -S.
       
     - id: make
+      if: matrix.os == 'windows-latest'
       run: cd ${GITHUB_WORKSPACE}/build && make
       
     - name: Add MinGW to PATH (Windows only)
