@@ -36,7 +36,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
        echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $Env:GITHUB_PATH
-       shell: powershell
+      shell: powershell
        
     - name: Verify MinGW (Windows only)
       if: matrix.os == 'windows-latest'
@@ -52,12 +52,6 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
           -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.1/gcc_64 \
           -G "Unix Makefiles"
-
-    - name: Add MinGW to PATH (Windows only)
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $Env:GITHUB_PATH
-      shell: powershell
 
     - name: Configure CMake for Windows
       if: matrix.os == 'windows-latest'
