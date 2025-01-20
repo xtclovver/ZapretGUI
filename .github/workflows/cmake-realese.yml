@@ -69,10 +69,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: C:/Qt/6.8.1/mingw_64/bin/qmake.exe --version
       shell: cmd
-
-    - name: Check Qt Version (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: /opt/Qt/6.8.1/gcc_64/bin/qmake --version
       
     - name: Configure CMake for Linux
       if: matrix.os == 'ubuntu-latest'
