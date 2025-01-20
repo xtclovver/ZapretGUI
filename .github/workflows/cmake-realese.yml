@@ -26,7 +26,7 @@ jobs:
         version: '6.8.1'
         host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
         target: 'desktop'
-        arch: ${{ matrix.os == 'windows-latest' && 'win64_mingw' || 'linux_gcc_64' }}
+        arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2022_64' || 'linux_gcc_64' }}
         path: ${{ matrix.os == 'windows-latest' && 'C:\\Qt' || '/opt/Qt' }}
         modules: 'qtcharts qtwebengine'
         install-deps: 'true'
