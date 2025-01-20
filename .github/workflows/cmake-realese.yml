@@ -31,9 +31,24 @@ jobs:
         modules: 'qtcharts'
         tools: ${{ matrix.os == 'windows-latest' && 'tools_mingw1310' || '' }}
         install-deps: 'true'
-
+        
+    - name: Add MinGW to PATH (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "Adding MinGW to PATH"
+        echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $GITHUB_PATH
+        
     - name: Configure CMake
-      run: cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_PREFIX_PATH=${{ matrix.os == 'windows-latest' && 'C:/Qt/6.8.1/mingw_64' || '/opt/Qt/6.8.1/gcc_64' }}
+      run: |
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DCMAKE_PREFIX_PATH=${{ matrix.os == 'windows-latest' && 'C:/Qt/6.8.1/mingw_64' || '/opt/Qt/6.8.1/gcc_64' }} \
+          -G "${
+            matrix.os == 'windows-latest' 
+            && 'MinGW Makefiles' 
+            || 'Unix Makefiles'
+          }" \
+          ${{ matrix.os == 'windows-latest' && '-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw1310/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw1310/bin/g++.exe' || '' }}
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }}
