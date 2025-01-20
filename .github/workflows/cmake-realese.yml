@@ -35,17 +35,40 @@ jobs:
     - name: Add MinGW to PATH (Windows only)
       if: matrix.os == 'windows-latest'
       run: |
-        echo "Adding MinGW to PATH"
-        echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $GITHUB_PATH
-        
-    - name: Configure CMake
+       echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $Env:GITHUB_PATH
+       shell: powershell
+       
+    - name: Verify MinGW (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: |
+       gcc --version
+        g++ --version
+      shell: cmd
+       
+    - name: Configure CMake for Linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cmake -B build -S . \
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_PREFIX_PATH=${{ matrix.os == 'windows-latest' && 'C:/Qt/6.8.1/mingw_64' || '/opt/Qt/6.8.1/gcc_64' }} \
-          ${{matrix.os == 'windows-latest' && '-G MinGW Makefiles' || ''}} \
-          ${{ matrix.os == 'windows-latest' && '-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw1310/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw1310/bin/g++.exe' || '' }}
+          -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.1/gcc_64 \
+          -G "Unix Makefiles"
 
+    - name: Add MinGW to PATH (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $Env:GITHUB_PATH
+      shell: powershell
+
+    - name: Configure CMake for Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake -B build -S . ^
+          -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_PREFIX_PATH=C:/Qt/6.8.1/mingw_64 ^
+          -G "MinGW Makefiles" ^
+          -DCMAKE_C_COMPILER=C:/Qt/Tools/mingw1310/bin/gcc.exe ^
+          -DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw1310/bin/g++.exe
+      shell: cmd
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }}
 
