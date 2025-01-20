@@ -43,31 +43,9 @@ jobs:
        gcc --version
        g++ --version
       shell: cmd
-      
-    - name: Check MinGW Path (Windows only)
-      if: matrix.os == 'windows-latest'
-      run: |
-        if exist "C:\Qt\Tools\mingw1310\bin\gcc.exe" (
-          echo "gcc.exe found."
-        ) else (
-         echo "gcc.exe not found." 
-         exit 1
-        )
-        if exist "C:\Qt\Tools\mingw1310\bin\g++.exe" (
-         echo "g++.exe found."
-        ) else (
-          echo "g++.exe not found."
-          exit 1
-        )
-      shell: cmd
-     
+    
     - name: Check CMake Version
       run: cmake --version
-
-    - name: Check Qt Version (Windows)
-      if: matrix.os == 'windows-latest'
-      run: C:/Qt/6.8.1/mingw_64/bin/qmake.exe --version
-      shell: cmd
       
     - name: Configure CMake for Linux
       if: matrix.os == 'ubuntu-latest'
@@ -79,11 +57,9 @@ jobs:
 
     - name: Configure CMake for Windows
       if: matrix.os == 'windows-latest'
-      run: |
-        cmake -B build -S . ^
-          -DCMAKE_BUILD_TYPE=Release ^
-          -DCMAKE_PREFIX_PATH=D:/a/ZapretGUI/Qt/6.8.1/mingw_64 ^
-          -G "MinGW Makefiles"
+      env:
+        CMAKE_PREFIX_PATH: ${{env.Qt5_Dir}}
+      run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=D:/a/ZapretGUI/Qt/6.8.1/mingw_64 -G "MinGW Makefiles" 
       shell: cmd
       
     - name: Build
