@@ -35,7 +35,7 @@ jobs:
     - name: Add MinGW to PATH (Windows only)
       if: matrix.os == 'windows-latest'
       run: |
-       echo "C:\\Qt\\Tools\\mingw1310\\bin" >> $Env:GITHUB_PATH
+        echo "D:\\a\\ZapretGUI\\Qt\\Tools\\mingw1310\\bin" >> $GITHUB_PATH
       shell: powershell
        
     - name: Verify MinGW (Windows only)
@@ -83,8 +83,8 @@ jobs:
       run: |
         cmake -B build -S . ^
           -DCMAKE_BUILD_TYPE=Release ^
-           -DCMAKE_PREFIX_PATH=C:/Qt/6.8.1/mingw_64 ^
-           -G "MinGW Makefiles"
+          -DCMAKE_PREFIX_PATH=D:/a/ZapretGUI/Qt/6.8.1/mingw_64 ^
+          -G "MinGW Makefiles"
       shell: cmd
       
     - name: Build
