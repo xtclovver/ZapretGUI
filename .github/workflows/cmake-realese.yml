@@ -27,32 +27,10 @@ jobs:
         host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
         target: 'desktop'
         arch: ${{ matrix.os == 'windows-latest' && 'win64_mingw' || 'linux_gcc_64' }}
-        path: ${{ matrix.os == 'windows-latest' && 'C:\\Qt' || '/opt/Qt' }}
         modules: 'qtcharts'
         tools: ${{ matrix.os == 'windows-latest' && 'tools_mingw1310' || '' }}
         install-deps: 'true'
         
-    - id: install_conan
-      uses: turtlebrowser/get-conan@main
-      with:
-        version: 1.65.0
-        
-    - id: patch_conan
-      if: matrix.os == 'windows-latest'
-      run: conan profile new default --detect && conan profile update settings.compiler.libcxx=libstdc++11 default
-      
-    - id: run_conan
-      if: matrix.os == 'windows-latest'
-      run: cd ${GITHUB_WORKSPACE}/ZapretGUI && conan install --generator cmake_find_package --install-folder ../build/conan-dependencies .
-      
-    - id: cmake
-      if: matrix.os == 'windows-latest'
-      run: cd ${GITHUB_WORKSPACE}/ZapretGUI && cmake -B../build -S.
-      
-    - id: make
-      if: matrix.os == 'windows-latest'
-      run: cd ${GITHUB_WORKSPACE}/build && make
-      
     - name: Add MinGW to PATH (Windows only)
       if: matrix.os == 'windows-latest'
       run: |
