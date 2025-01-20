@@ -1,0 +1,57 @@
+# .github/workflows/cmake-release.yml
+name: CMake Release Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Qt
+      if: matrix.os == 'ubuntu-latest'
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '6.8.1'
+        host: 'linux'
+        arch: 'linux'
+        path: '/opt/Qt'
+
+    - name: Set up Qt
+      if: matrix.os == 'windows-latest'
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '6.8.1'
+        host: 'windows'
+        arch: 'win64_mingw73'
+        path: 'C:\\Qt'
+
+    - name: Configure CMake
+      run: cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_PREFIX_PATH=${{ matrix.os == 'windows-latest' && 'C:/Qt/6.8.1/mingw_64' || '/opt/Qt/6.8.1/gcc_64' }}
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+    - name: Run Tests
+      run: ctest --output-on-failure --build-config ${{ env.BUILD_TYPE }}
+      working-directory: build
+
+    - name: Upload Build Artifacts
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ZapretGUI-${{ matrix.os }}-${{ env.BUILD_TYPE }}
+        path: build/
+
