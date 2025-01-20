@@ -43,11 +43,11 @@ jobs:
       
     - id: run_conan
       if: matrix.os == 'windows-latest'
-      run: cd ${GITHUB_WORKSPACE}/app && conan install --generator cmake_find_package --install-folder ../build/conan-dependencies .
+      run: cd ${GITHUB_WORKSPACE}/ZapretGUI && conan install --generator cmake_find_package --install-folder ../build/conan-dependencies .
       
     - id: cmake
       if: matrix.os == 'windows-latest'
-      run: cd ${GITHUB_WORKSPACE}/app && cmake -B../build -S.
+      run: cd ${GITHUB_WORKSPACE}/ZapretGUI && cmake -B../build -S.
       
     - id: make
       if: matrix.os == 'windows-latest'
