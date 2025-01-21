@@ -64,7 +64,8 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake --build . --config Release -G "Ninja"
+          cmake -DCMAKE_PREFIX_PATH=D:/a/_temp/msys64 ..
+          cmake --build . --config Release -GNinja
 
       - name: Сборка проекта на Linux и macOS
         if: runner.os != 'Windows'
