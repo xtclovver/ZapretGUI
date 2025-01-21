@@ -24,9 +24,15 @@ jobs:
           install: >
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-cninja
+            mingw-w64-x86_64-gcc
+            mingw-w64-mingw32-g++
             mingw-w64-x86_64-qt6-base
             mingw-w64-x86_64-qt6-declarative
-          cache: true
+          pacboy: >
+            toolchain:p
+            cmake:p
+            ninja:p
 
       - name: Настройка среды на Windows
         if: runner.os == 'Windows'
@@ -61,7 +67,7 @@ jobs:
           mkdir build
           cd build
           cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6 ..
-          cmake --build . --config Release
+          cmake --build . --config Release -G "Ninja"
 
       - name: Сборка проекта на Linux и macOS
         if: runner.os != 'Windows'
