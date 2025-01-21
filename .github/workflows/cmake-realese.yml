@@ -1,77 +1,64 @@
-# .github/workflows/cmake-release.yml
-name: CMake Release Build
+name: Build Qt Project
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "master" ]
-
-env:
-  BUILD_TYPE: Release
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
-
+        os: [windows-latest, ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-    - name: Set up Qt
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '6.8.1'
-        host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
-        target: 'desktop'
-        arch: ${{ matrix.os == 'windows-latest' && 'win64_mingw' || 'linux_gcc_64' }}
-        modules: 'qtcharts'
-        tools: ${{ matrix.os == 'windows-latest' && 'tools_mingw1310' || '' }}
-        install-deps: 'true'
-        
-    - name: Add MinGW to PATH (Windows only)
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo "D:\\a\\ZapretGUI\\Qt\\Tools\\mingw1310\\bin" >> $GITHUB_PATH
-      shell: powershell
-       
-    - name: Verify MinGW (Windows only)
-      if: matrix.os == 'windows-latest'
-      run: |
-       gcc --version
-       g++ --version
-      shell: cmd
-    
-    - name: Check CMake Version
-      run: cmake --version
-      
-    - name: Configure CMake for Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cmake -B build -S . \
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.1/gcc_64 \
-          -G "Unix Makefiles"
+      # Установка зависимостей на Windows
+      - name: Установка MSYS2 и MinGW
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-tools
+            mingw-w64-x86_64-qt6-declarative
+          cache: true
 
-    - name: Configure CMake for Windows
-      if: matrix.os == 'windows-latest'
-      env:
-        CMAKE_PREFIX_PATH: ${{env.Qt5_Dir}}
-      run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=D:/a/ZapretGUI/Qt/6.8.1/mingw_64 -G "MinGW Makefiles" 
-      shell: cmd
-      
-    - name: Build
-      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+      # Установка зависимостей на Linux
+      - name: Установка зависимостей на Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-declarative-dev
 
-    - name: Run Tests
-      run: ctest --output-on-failure --build-config ${{ env.BUILD_TYPE }}
-      working-directory: build
+      # Установка зависимостей на macOS
+      - name: Установка зависимостей на macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install qt
 
-    - name: Upload Build Artifacts
-      if: success()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ZapretGUI-${{ matrix.os }}-${{ env.BUILD_TYPE }}
-        path: build/
+      # Настройка окружения для Qt на macOS
+      - name: Настройка PATH для Qt на macOS
+        if: runner.os == 'macOS'
+        run: echo "::add-path::$(brew --prefix qt)/bin"
+
+      # Сборка проекта
+      - name: Сборка проекта
+        run: |
+          mkdir build
+          cd build
+          qmake ../
+          make -j$(nproc)
+
+      # Выгрузка артефактов
+      - name: Выгрузка артефактов
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.os }}
+          path: build/
