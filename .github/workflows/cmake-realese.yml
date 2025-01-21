@@ -39,7 +39,7 @@ jobs:
       # Настройка PATH для Qt на Linux
       - name: Настройка PATH для Qt на Linux (GHEnv)
         if: runner.os == 'Linux'
-        run: echo "/usr/lib/qt6/bin" >> $GITHUB_ENV
+        run: echo "/usr/lib/qt6/bin" >> $GITHUB_PATH
 
       # Установка зависимостей на macOS
       - name: Установка зависимостей на macOS
