@@ -55,13 +55,21 @@ jobs:
         if: runner.os == 'macOS'
         run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
 
-      - name: Сборка проекта
+      - name: Сборка проекта на Windows
+        if: runner.os == 'Windows'
         run: |
           mkdir build
           cd build
-          ${{if runner.os == 'Windows' && 'cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6' || 'cmake ..'}}
+          cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6 ..
           cmake --build . --config Release
 
+      - name: Сборка проекта на Linux и macOS
+        if: runner.os != 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
       # Выгрузка артефактов
       - name: Выгрузка артефактов
         uses: actions/upload-artifact@v3
