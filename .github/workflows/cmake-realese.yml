@@ -59,7 +59,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          ${{if: runner.os == 'Windows' && 'cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6' || 'cmake ..'}}
+          ${{if runner.os == 'Windows' && 'cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6' || 'cmake ..'}}
           cmake --build . --config Release
 
       # Выгрузка артефактов
