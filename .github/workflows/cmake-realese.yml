@@ -51,7 +51,7 @@ jobs:
       # Настройка PATH для Qt на macOS
       - name: Настройка PATH для Qt на macOS
         if: runner.os == 'macOS'
-        run: echo "::add-path::$(brew --prefix qt)/bin"
+        run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
 
       # Сборка проекта
       - name: Сборка проекта
