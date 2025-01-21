@@ -24,6 +24,7 @@ jobs:
           install: >
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
             mingw-w64-x86_64-cninja
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-qt6-base
@@ -36,9 +37,7 @@ jobs:
       - name: Настройка среды на Windows
         if: runner.os == 'Windows'
         shell: bash
-        run: |
-          echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
-          echo "C:\msys64\usr\bin" >> $GITHUB_PATH
+        run: echo "D:/a/_temp/msys64/mingw64/bin" >> $GITHUB_PATH
           
       - name: Установка зависимостей на Linux
         if: runner.os == 'Linux'
@@ -65,7 +64,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_PREFIX_PATH=C:\msys64\mingw64\qt6 ..
           cmake --build . --config Release -G "Ninja"
 
       - name: Сборка проекта на Linux и macOS
