@@ -71,9 +71,9 @@ jobs:
           mkdir build
           cd build
           cmake -DCMAKE_PREFIX_PATH=D:/a/_temp/msys64 ..
-          cp D:/a/_temp/msys64/mingw64/binQt6Core.dll .
-          cp D:/a/_temp/msys64/mingw64/binQt6Gui.dll .
-          cp D:/a/_temp/msys64/mingw64/binQt6Widgets.dll .
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Core.dll .
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Gui.dll .
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Widgets.dll .
           cmake --build . --config Release 
 
       - name: Сборка проекта на Linux и macOS
