@@ -2,9 +2,9 @@ name: Build Qt Project
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -34,7 +34,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-declarative-dev
+          sudo apt-get install -y build-essential
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-declarative-dev
+      # Настройка PATH для Qt на Linux
+      - name: Настройка PATH для Qt на Linux
+        if: runner.os == 'Linux'
+        run: echo "::add-path::/usr/lib/qt6/bin"
 
       # Установка зависимостей на macOS
       - name: Установка зависимостей на macOS
@@ -43,7 +48,7 @@ jobs:
           brew update
           brew install qt
 
-      # Настройка окружения для Qt на macOS
+      # Настройка PATH для Qt на macOS
       - name: Настройка PATH для Qt на macOS
         if: runner.os == 'macOS'
         run: echo "::add-path::$(brew --prefix qt)/bin"
