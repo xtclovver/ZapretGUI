@@ -82,7 +82,7 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          cmake --build . --config Release
+          cmake --build . --config Release --fresh
       # Выгрузка артефактов
       - name: Выгрузка артефактов
         uses: actions/upload-artifact@v3
