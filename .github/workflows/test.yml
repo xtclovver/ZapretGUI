@@ -1,64 +1,69 @@
-name: "MSVC-CodeAnalysis"
+name: Build Qt Project
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
 
-  
-env:
-  # Path to the CMake build directory.
-  build: '${{ github.workspace }}/build'
-  config: 'Release'
-
 jobs:
-  analyze:
-    name: Analyze
-    runs-on: windows-latest
-
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019, ubuntu-latest, macos-latest]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
+      # Установка Qt на Windows
+      - name: Установка Qt на Windows
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v2
         with:
-          version: '6.5.0'
+          version: '6.5.1'
           host: 'windows'
-          target: 'desktop'
-          
-      - name: Configure CMake
-        run: cmake -B ${{ env.build }} -DCMAKE_BUILD_TYPE=${{ env.config }} "-DJKQtPlotter_BUILD_EXAMPLES:BOOL=OFF" "-DJKQtPlotter_BUILD_TOOLS:BOOL=OFF" "-DJKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS:BOOL=OFF"
+          arch: 'win64_msvc2019_64'
+          modules: 'qtbase'
 
-      - name: Build CMake
-        run: cmake --build ${{ env.build }} --config ${{ env.config }}
+      - name: Установка зависимостей на Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools qt6-declarative-dev
 
-      - name: Run MSVC Code Analysis
-        uses: microsoft/msvc-code-analysis-action@v0.1.1
-        # Provide a unique ID to access the sarif output path
-        id: run-analysis
+      - name: Настройка PATH для Qt на Linux (GHEnv)
+        if: runner.os == 'Linux'
+        run: echo "/usr/lib/qt6/bin" >> $GITHUB_PATH
+
+      - name: Установка зависимостей на macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake qt
+
+      - name: Настройка PATH для Qt на macOS
+        if: runner.os == 'macOS'
+        run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
+
+      - name: Сборка проекта на Windows
+        if: runner.os == 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="%Qt6_DIR%" ..
+          cmake --build . --config Release
+
+      - name: Сборка проекта на Linux и macOS
+        if: runner.os != 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release --fresh
+
+      # Выгрузка артефактов
+      - name: Выгрузка артефактов
+        uses: actions/upload-artifact@v3
         with:
-          cmakeBuildDirectory: ${{ env.build }}
-          buildConfiguration: ${{ env.config }}
-          # Ruleset file that will determine what checks will be run
-          ruleset: NativeRecommendedRules.ruleset
-          # Paths to ignore analysis of CMake targets and includes
-          # ignoredPaths: ${{ github.workspace }}/dependencies;${{ github.workspace }}/test
-
-      # Upload SARIF file to GitHub Code Scanning Alerts
-      - name: Upload SARIF to GitHub
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ${{ steps.run-analysis.outputs.sarif }}
-
-      # Upload SARIF file as an Artifact to download and view
-      - name: Upload SARIF as an Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sarif-file
-          path: ${{ steps.run-analysis.outputs.sarif }}
-
-          
+          name: build-${{ matrix.os }}
+          path: build/
