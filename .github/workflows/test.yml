@@ -1,4 +1,4 @@
-name: Build Qt Project
+name: Build Qt Project (Test)
 
 on:
   push:
@@ -59,7 +59,7 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          cmake --build . --config Release --fresh
+          cmake --build . --config Release
 
       # Выгрузка артефактов
       - name: Выгрузка артефактов
