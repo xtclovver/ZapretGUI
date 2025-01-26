@@ -1,0 +1,91 @@
+name: Build Qt Project
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Установка MSYS2 и MinGW
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-cninja
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-declarative
+          pacboy: >
+            toolchain:p
+            cmake:p
+            ninja:p
+
+      - name: Настройка среды на Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "D:/a/_temp/msys64/mingw64/bin" >> $GITHUB_PATH
+          
+      - name: Установка зависимостей на Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools qt6-declarative-dev
+
+      - name: Настройка PATH для Qt на Linux (GHEnv)
+        if: runner.os == 'Linux'
+        run: echo "/usr/lib/qt6/bin" >> $GITHUB_PATH
+
+      - name: Установка зависимостей на macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake qt
+
+      - name: Настройка PATH для Qt на macOS
+        if: runner.os == 'macOS'
+        run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
+
+      - name: List files in directory
+        if: runner.os == 'Windows'
+        run: |
+          Get-ChildItem -Path "D:/a/_temp/msys64/mingw64/bin" -File
+        shell: pwsh
+        
+      - name: Сборка проекта на Windows
+        if: runner.os == 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_PREFIX_PATH=D:/a/_temp/msys64 ..
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Core.dll .
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Gui.dll .
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Widgets.dll .
+          cmake --build . --config Release 
+
+      - name: Сборка проекта на Linux и macOS
+        if: runner.os != 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
+      # Выгрузка артефактов
+      - name: Выгрузка артефактов
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.os }}
+          path: build/
