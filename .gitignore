@@ -1,0 +1,5 @@
+cmake-build-debug/
+cmake-build-msvs17/
+cmake-build-release/
+
+CMakeLists.txt

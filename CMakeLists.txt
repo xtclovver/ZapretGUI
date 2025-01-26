@@ -12,34 +12,52 @@ find_package(Qt6 COMPONENTS
   Core
   Gui
   Widgets
+  Test
   REQUIRED)
 
-set(SOURCES
-        main.cpp
-        mainwindow.cpp
-        configeditordialog.cpp
+# Main library sources
+set(LIB_SOURCES
+    mainwindow.cpp
+    configeditordialog.cpp
 )
 
-set(HEADERS
-        mainwindow.h
-        configeditordialog.h
+set(LIB_HEADERS
+    mainwindow.h
+    configeditordialog.h
 )
 
-set(UI
-        mainwindow.ui
-        configeditordialog.ui
+set(LIB_UI
+    mainwindow.ui
+    configeditordialog.ui
 )
 
-add_executable(ZapretGUI
-        ${SOURCES}
-        ${HEADERS}
-        ${UI}
+# Create a library for shared code
+add_library(ZapretGUILib
+    ${LIB_SOURCES}
+    ${LIB_HEADERS}
+    ${LIB_UI}
 )
-target_link_libraries(ZapretGUI
-  Qt::Core
-  Qt::Gui
+
+target_link_libraries(ZapretGUILib
+  Qt6::Core
+  Qt6::Gui
   Qt6::Widgets
 )
+
+target_include_directories(ZapretGUILib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Main executable
+add_executable(ZapretGUI
+    main.cpp
+)
+
+target_link_libraries(ZapretGUI
+  ZapretGUILib
+)
+
+# Enable testing and add tests subdirectory
+enable_testing()
+add_subdirectory(tests)
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)

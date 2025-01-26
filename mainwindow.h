@@ -31,8 +31,8 @@ public:
 
 private:
     Ui::MainWindow *ui;
+public:
     QProcess *process;
-
     void appendLog(const QString &message);
 };
 

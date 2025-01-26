@@ -32,6 +32,11 @@ ConfigEditorDialog::~ConfigEditorDialog()
     delete ui;
 }
 
+QPlainTextEdit* ConfigEditorDialog::getPlainTextEditConfig() const
+{
+    return ui->plainTextEditConfig;
+}
+
 // Слот для обработки нажатия кнопки "OK"
 void ConfigEditorDialog::on_buttonBox_accepted()
 {
