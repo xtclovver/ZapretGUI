@@ -1,10 +1,10 @@
-name: Semantic Release
+name: Забилдить и создать релиз
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [patch]
+  pull_request:
+    branches: [main]
 
 jobs:
   versioning:
