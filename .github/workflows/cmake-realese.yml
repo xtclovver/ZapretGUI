@@ -7,11 +7,11 @@ on:
     branches: [main]
 
 jobs:
-  versioning:
+  determine-version:
     runs-on: ubuntu-latest
     outputs:
-      semver: ${{ steps.semver.outputs.version }}
-      release-type: ${{ steps.analyze.outputs.release-type }}
+      version: ${{ steps.semantic-release.outputs.new-version }}
+      is-prerelease: ${{ steps.check-branch.outputs.is-prerelease }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,26 +19,37 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Analyze commits
-        id: analyze
-        uses: incremental-actions/conventional-commit@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Calculate SemVer
-        id: semver
-        uses: cycjimmy/semantic-release-action@v3
-        with:
-          branches: |
-            main
-            patch
-          preset: conventionalcommits
-          dry-run: false
+      - name: Install dependencies
+        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git
+
+      - name: Check branch type
+        id: check-branch
+        run: |
+          if [ "${{ github.ref_name }}" == "patch" ]; then
+            echo "is-prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is-prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Semantic Release
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.ref_name }}" == "patch" ]; then
+            prerelease="--prerelease patch"
+          fi
+          
+          version=$(npx semantic-release --dry-run $prerelease | grep -oP 'next release version is \K.*')
+          echo "new-version=$version" >> $GITHUB_OUTPUT
 
   build:
-    needs: versioning
+    needs: determine-version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -108,26 +119,40 @@ jobs:
           cd build
           cmake ..
           cmake --build . --config Release
-      # Выгрузка артефактов
-      - name: Выгрузка артефактов
+  
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.os }}
+          name: build-${{ matrix.os }}-${{ needs.determine-version.outputs.version }}
           path: build/
 
-      - name: Добавить версию в артефакты
-        run: echo "${{ needs.versioning.outputs.semver }}" > version.txt
-
-  release:
-    needs: [versioning, build]
+  publish-release:
+    needs: [determine-version, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
-      - name: Создать релиз
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          prerelease: ${{ github.ref == 'refs/heads/patch' }}
-          tag_name: ${{ needs.versioning.outputs.semver }}
-          name: Release ${{ needs.versioning.outputs.semver }}
+          prerelease: ${{ needs.determine-version.outputs.is-prerelease }}
+          tag_name: v${{ needs.determine-version.outputs.version }}
+          name: Release v${{ needs.determine-version.outputs.version }}
           body: |
-            ${{ steps.analyze.outputs.notes }}
-          files: artifacts/*
+            ### Changes
+            ${{ github.event.head_commit.message }}
+            
+            ### Artifacts
+            Built for:
+            - Windows
+            - Linux
+            - macOS
+          files: |
+            artifacts/build-*-${{ needs.determine-version.outputs.version }}/*
