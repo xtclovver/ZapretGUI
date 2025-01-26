@@ -146,6 +146,55 @@ jobs:
             artifacts/build-Linux/build-ubuntu-latest.zip
             artifacts/build-macOS/build-macos-latest.zip
 
+
+  release:
+    needs: build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get PR description
+        if: github.event_name == 'pull_request'
+        id: pr_description
+        run: |
+          DESCRIPTION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "${{ github.event.pull_request.url }}" | jq -r '.body')
+          echo "::set-output name=description::$DESCRIPTION"
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: minor
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Copy artifacts to a single directory
+        run: |
+          mkdir artifacts/release
+          cp artifacts/build-Windows/build-windows-latest.zip artifacts/release/
+          cp artifacts/build-Linux/build-ubuntu-latest.zip artifacts/release/
+          cp artifacts/build-macOS/build-macos-latest.zip artifacts/release/
+
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: |
+            ${{ steps.pr_description.outputs.description && format('PR Description: {0}', steps.pr_description.outputs.description) || '' }}
+            ${{ !steps.pr_description.outputs.description && format('Commits: {0}', join(github.event.commits.*.message, '\n')) || '' }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/release/*.zip
+
   pre-release:
     needs: build
     permissions:
@@ -201,7 +250,14 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: artifacts # Загружаем все артефакты в папку artifacts
+          path: artifacts
+
+      - name: Copy artifacts to a single directory
+        run: |
+          mkdir artifacts/release
+          cp artifacts/build-Windows/build-windows-latest.zip artifacts/release/
+          cp artifacts/build-Linux/build-ubuntu-latest.zip artifacts/release/
+          cp artifacts/build-macOS/build-macos-latest.zip artifacts/release/
 
       - name: Create a GitHub pre-release
         uses: softprops/action-gh-release@v1
@@ -214,6 +270,4 @@ jobs:
             Commits:
             ${{ join(github.event.commits.*.message, '\n') }}
           files: |
-            artifacts/build-Windows/build-windows-latest.zip
-            artifacts/build-Linux/build-ubuntu-latest.zip
-            artifacts/build-macOS/build-macos-latest.zip
+            artifacts/release/*.zip
