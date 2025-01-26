@@ -225,9 +225,9 @@ jobs:
       - name: Copy artifacts to a single directory
         run: |
           mkdir -p artifacts/release
-          cp artifacts/build-Windows/build-windows-latest.zip artifacts/release/
-          cp artifacts/build-Linux/build-ubuntu-latest.zip artifacts/release/
-          cp artifacts/build-macOS/build-macos-latest.zip artifacts/release/
+          cp artifacts/build-Windows/build-Windows.zip artifacts/release/build-windows-latest.zip
+          cp artifacts/build-Linux/build-Linux.zip artifacts/release/build-ubuntu-latest.zip
+          cp artifacts/build-macOS/build-macOS.zip artifacts/release/build-macos-latest.zip
 
       - name: Debug - List copied artifacts
         run: |
