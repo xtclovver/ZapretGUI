@@ -38,38 +38,38 @@ jobs:
           else
             echo "is-prerelease=false" >> $GITHUB_OUTPUT
           fi
-    - name: Run Semantic Release
-      id: semantic-release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -x  # Включить отладку
-        
-        # Добавляем базовую конфигурацию
-        echo "module.exports = {
-          branches: ['main', {name: 'patch', prerelease: true}],
-          plugins: [
-            '@semantic-release/commit-analyzer',
-            '@semantic-release/release-notes-generator',
-            '@semantic-release/changelog',
-            '@semantic-release/github',
-            '@semantic-release/git'
-          ]
-        }" > release.config.js
-        
-        # Запускаем semantic-release
-        OUTPUT=$(npx semantic-release --dry-run --no-ci)
-        echo "$OUTPUT"
-        
-        # Извлекаем версию
-        VERSION=$(echo "$OUTPUT" | grep -oP 'next release version is \K.*')
-        
-        if [ -z "$VERSION" ]; then
-          echo "::warning::No new version detected"
-          echo "new-version=0.0.0" >> $GITHUB_OUTPUT
-        else
-          echo "new-version=$VERSION" >> $GITHUB_OUTPUT
-        fi
+      - name: Run Semantic Release
+        id: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x  # Включить отладку
+          
+          # Добавляем базовую конфигурацию
+          echo "module.exports = {
+            branches: ['main', {name: 'patch', prerelease: true}],
+            plugins: [
+              '@semantic-release/commit-analyzer',
+              '@semantic-release/release-notes-generator',
+              '@semantic-release/changelog',
+              '@semantic-release/github',
+              '@semantic-release/git'
+            ]
+          }" > release.config.js
+          
+          # Запускаем semantic-release
+          OUTPUT=$(npx semantic-release --dry-run --no-ci)
+          echo "$OUTPUT"
+          
+          # Извлекаем версию
+          VERSION=$(echo "$OUTPUT" | grep -oP 'next release version is \K.*')
+          
+          if [ -z "$VERSION" ]; then
+            echo "::warning::No new version detected"
+            echo "new-version=0.0.0" >> $GITHUB_OUTPUT
+          else
+            echo "new-version=$VERSION" >> $GITHUB_OUTPUT
+          fi
 
   build:
     needs: determine-version
