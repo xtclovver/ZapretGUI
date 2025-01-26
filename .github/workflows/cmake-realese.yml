@@ -86,7 +86,8 @@ jobs:
           
   release:
     needs: build
-    permissions: write-all
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
@@ -106,35 +107,28 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: minor
 
-      - name: Create a GitHub release
-        uses: ncipollo/release-action@v1
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
         with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
+          path: artifacts
+          
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: |
             ${{ steps.pr_description.outputs.description && format('PR Description: {0}', steps.pr_description.outputs.description) || '' }}
             ${{ !steps.pr_description.outputs.description && format('Commits: {0}', join(github.event.commits.*.message, '\n')) || '' }}
           draft: false
           prerelease: false
-
-      - name: Скачивание артефактов
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-
-      - name: Загрузка артефактов в релиз
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/
-          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ steps.tag_version.outputs.new_tag }}.zip
-          asset_content_type: application/zip
+          files: |
+            artifacts/**/*.zip
 
   pre-release:
     needs: build
-    permissions: write-all
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/patch'
     steps:
@@ -183,31 +177,20 @@ jobs:
           echo "::set-output name=version::$NEW_VERSION"
           echo "Pre-release version: $NEW_VERSION"
 
-      - name: Создание пре-релиза
-        id: create_pre_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create a GitHub pre-release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.pre_release_version.outputs.version }}
-          release_name: Pre-Release v${{ steps.pre_release_version.outputs.version }}
+          name: Pre-Release v${{ steps.pre_release_version.outputs.version }}
           draft: false
           prerelease: true
           body: |
             Commits:
             ${{ join(github.event.commits.*.message, '\n') }}
-
-      - name: Скачивание артефактов
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-
-      - name: Загрузка артефактов в пре-релиз
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
-          asset_path: ./artifacts/
-          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-v${{ steps.pre_release_version.outputs.version }}.zip
-          asset_content_type: application/zip
+          files: |
+            artifacts/**/*.zip
