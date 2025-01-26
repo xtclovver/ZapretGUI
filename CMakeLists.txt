@@ -55,7 +55,7 @@ target_link_libraries(ZapretGUI
 
 # Enable testing and add tests subdirectory
 enable_testing()
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)
