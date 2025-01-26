@@ -62,12 +62,6 @@ jobs:
         if: runner.os == 'macOS'
         run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
 
-      - name: List files in directory
-        if: runner.os == 'Windows'
-        run: |
-          Get-ChildItem -Path "D:/a/_temp/msys64/mingw64/bin" -File
-        shell: pwsh
-
       - name: Сборка проекта на Windows
         if: runner.os == 'Windows'
         run: |
@@ -93,7 +87,6 @@ jobs:
         with:
           name: build-${{ matrix.os }}
           path: build/
-
   release:
     needs: build
     permissions: write-all
@@ -101,17 +94,31 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
-      - name: Создание релиза
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get PR description
+        if: github.event_name == 'pull_request'
+        id: pr_description
+        run: |
+          DESCRIPTION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "${{ github.event.pull_request.url }}" | jq -r '.body')
+          echo "::set-output name=description::$DESCRIPTION"
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: minor
+
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: |
+            ${{ steps.pr_description.outputs.description && format('PR Description: {0}', steps.pr_description.outputs.description) || '' }}
+            ${{ !steps.pr_description.outputs.description && format('Commits: {0}', join(github.event.commits.*.message, '\n')) || '' }}
           draft: false
           prerelease: false
-          body: ${{ github.event.head_commit.message }}
 
       - name: Скачивание артефактов
         uses: actions/download-artifact@v3
@@ -125,9 +132,9 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/
-          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ github.sha }}.zip
+          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
-
+          
   pre-release:
     needs: build
     permissions: write-all
@@ -135,17 +142,47 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/patch'
     steps:
       - uses: actions/checkout@v3
+
+      - name: Get latest release version
+        id: latest_release
+        uses: abatilo/release-info-action@v1.6.3
+        with:
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+
+      - name: Set pre-release version
+        id: pre_release_version
+        run: |
+          LATEST_VERSION="${{ steps.latest_release.outputs.tag_name }}"
+          # Remove 'v' prefix if exists
+          LATEST_VERSION_NO_PREFIX="${LATEST_VERSION#"v"}"
+
+          # Increment pre-release number or set to 1 if not existing
+          if [[ "$LATEST_VERSION_NO_PREFIX" == *-pre* ]]; then
+            BASE_VERSION=$(echo "$LATEST_VERSION_NO_PREFIX" | sed 's/-pre.*//')
+            PRE_NUMBER=$(echo "$LATEST_VERSION_NO_PREFIX" | grep -oP '(?<=-pre)\d+$')
+            NEW_PRE_NUMBER=$((PRE_NUMBER + 1))
+            NEW_VERSION="$BASE_VERSION-pre$NEW_PRE_NUMBER"
+          else
+            NEW_VERSION="$LATEST_VERSION_NO_PREFIX-pre1"
+          fi
+
+          echo "::set-output name=version::$NEW_VERSION"
+          echo "Pre-release version: $NEW_VERSION"
+
       - name: Создание пре-релиза
         id: create_pre_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Pre-Release ${{ github.sha }}
+          tag_name: v${{ steps.pre_release_version.outputs.version }}
+          release_name: Pre-Release v${{ steps.pre_release_version.outputs.version }}
           draft: false
           prerelease: true
-          body: ${{ github.event.head_commit.message }}
+          body: |
+            Commits:
+            ${{ join(github.event.commits.*.message, '\n') }}
 
       - name: Скачивание артефактов
         uses: actions/download-artifact@v3
@@ -159,5 +196,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
           asset_path: ./artifacts/
-          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ github.sha }}.zip
+          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-v${{ steps.pre_release_version.outputs.version }}.zip
           asset_content_type: application/zip
