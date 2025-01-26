@@ -25,17 +25,17 @@ jobs:
           msystem: MINGW64
           update: true
           install: >
-            mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
             mingw-w64-x86_64-cninja
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-qt6-base
-            mingw-w64-x86_64-qt6-declarative
+#            mingw-w64-x86_64-ninja
+#            mingw-w64-x86_64-toolchain
+#            mingw-w64-x86_64-qt6-declarative
           pacboy: >
-            toolchain:p
             cmake:p
             ninja:p
+#             toolchain:p
 
       - name: Настройка среды на Windows
         if: runner.os == 'Windows'
@@ -87,6 +87,7 @@ jobs:
         with:
           name: build-${{ matrix.os }}
           path: build/
+          
   release:
     needs: build
     permissions: write-all
@@ -134,7 +135,7 @@ jobs:
           asset_path: ./artifacts/
           asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ steps.tag_version.outputs.new_tag }}.zip
           asset_content_type: application/zip
-          
+
   pre-release:
     needs: build
     permissions: write-all
