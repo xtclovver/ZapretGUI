@@ -129,7 +129,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: artifacts
+          path: artifacts # Загружаем все артефакты в папку artifacts
 
       - name: Create a GitHub release
         uses: softprops/action-gh-release@v1
@@ -142,7 +142,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/build-*.zip
+            artifacts/build-Windows/build-windows-latest.zip
+            artifacts/build-Linux/build-ubuntu-latest.zip
+            artifacts/build-macOS/build-macos-latest.zip
 
   pre-release:
     needs: build
@@ -199,7 +201,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: artifacts
+          path: artifacts # Загружаем все артефакты в папку artifacts
 
       - name: Create a GitHub pre-release
         uses: softprops/action-gh-release@v1
@@ -212,4 +214,6 @@ jobs:
             Commits:
             ${{ join(github.event.commits.*.message, '\n') }}
           files: |
-            artifacts/build-*.zip
+            artifacts/build-Windows/build-windows-latest.zip
+            artifacts/build-Linux/build-ubuntu-latest.zip
+            artifacts/build-macOS/build-macos-latest.zip
