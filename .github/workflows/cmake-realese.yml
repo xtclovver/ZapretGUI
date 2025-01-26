@@ -64,10 +64,13 @@ jobs:
           mkdir build
           cd build
           cmake -DCMAKE_PREFIX_PATH=D:/a/_temp/msys64 ..
-          cp D:/a/_temp/msys64/mingw64/bin/Qt6Core.dll .
-          cp D:/a/_temp/msys64/mingw64/bin/Qt6Gui.dll .
-          cp D:/a/_temp/msys64/mingw64/bin/Qt6Widgets.dll .
           cmake --build . --config Release
+          # Копируем только необходимые файлы в отдельную директорию
+          mkdir release
+          cp Release/*.exe release/
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Core.dll release/
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Gui.dll release/
+          cp D:/a/_temp/msys64/mingw64/bin/Qt6Widgets.dll release/
 
       - name: Сборка проекта на Linux и macOS
         if: runner.os != 'Windows'
@@ -76,13 +79,29 @@ jobs:
           cd build
           cmake ..
           cmake --build . --config Release
+          mkdir release
+          cp ./ZapretGUI release/
+          ldd ./* | grep -o '/.*\.so[^ ]*' | xargs -I '{}' cp {} release/
+
+      - name: Create ZIP archive on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd build/release
+          Compress-Archive -Path * -DestinationPath ../../build-${{ runner.os }}.zip
+
+      - name: Create ZIP archive on Linux and macOS
+        if: runner.os != 'Windows'
+        run: |
+          cd build/release
+          zip -r ../../build-${{ runner.os }}.zip .
 
       # Выгрузка артефактов
       - name: Выгрузка артефактов
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.os }}
-          path: build/
+          name: build-${{ runner.os }}
+          path: build-${{ runner.os }}.zip
           
   release:
     needs: build
@@ -111,7 +130,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: artifacts
-          
+
       - name: Create a GitHub release
         uses: softprops/action-gh-release@v1
         with:
@@ -123,7 +142,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/**/*.zip
+            artifacts/build-*.zip
 
   pre-release:
     needs: build
@@ -170,7 +189,7 @@ jobs:
             PRE_NUMBER=$(echo "$LATEST_VERSION_NO_PREFIX" | grep -oP '(?<=-pre)\d+$')
             NEW_PRE_NUMBER=$((PRE_NUMBER + 1))
             NEW_VERSION="$BASE_VERSION-pre$NEW_PRE_NUMBER"
-          else
+          else:
             NEW_VERSION="$LATEST_VERSION_NO_PREFIX-pre1"
           fi
 
@@ -193,4 +212,4 @@ jobs:
             Commits:
             ${{ join(github.event.commits.*.message, '\n') }}
           files: |
-            artifacts/**/*.zip
+            artifacts/build-*.zip
