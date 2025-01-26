@@ -29,13 +29,9 @@ jobs:
             mingw-w64-x86_64-cninja
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-qt6-base
-#            mingw-w64-x86_64-ninja
-#            mingw-w64-x86_64-toolchain
-#            mingw-w64-x86_64-qt6-declarative
           pacboy: >
             cmake:p
             ninja:p
-#             toolchain:p
 
       - name: Настройка среды на Windows
         if: runner.os == 'Windows'
@@ -46,7 +42,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools qt6-declarative-dev
+          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools
 
       - name: Настройка PATH для Qt на Linux (GHEnv)
         if: runner.os == 'Linux'
@@ -146,15 +142,31 @@ jobs:
 
       - name: Get latest release version
         id: latest_release
-        uses: abatilo/release-info-action@v1.6.3
+        uses: actions/github-script@v6
         with:
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              const { owner, repo } = context.repo;
+              const response = await github.rest.repos.getLatestRelease({
+                owner,
+                repo,
+              });
+              const latestVersion = response.data.tag_name;
+              return latestVersion;
+            } catch (error) {
+              if (error.status === 404) {
+                console.log('No releases found. Returning default version v0.0.0');
+                return 'v0.0.0';
+              } else {
+                throw error;
+              }
+            }
 
       - name: Set pre-release version
         id: pre_release_version
         run: |
-          LATEST_VERSION="${{ steps.latest_release.outputs.tag_name }}"
+          LATEST_VERSION="${{ steps.latest_release.outputs.result }}"
           # Remove 'v' prefix if exists
           LATEST_VERSION_NO_PREFIX="${LATEST_VERSION#"v"}"
 
