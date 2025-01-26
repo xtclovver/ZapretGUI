@@ -1,13 +1,44 @@
-name: Build Qt Project
+name: Semantic Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [patch]
 
 jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    outputs:
+      semver: ${{ steps.semver.outputs.version }}
+      release-type: ${{ steps.analyze.outputs.release-type }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Analyze commits
+        id: analyze
+        uses: incremental-actions/conventional-commit@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate SemVer
+        id: semver
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          branches: |
+            main
+            patch
+          preset: conventionalcommits
+          dry-run: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: versioning
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -58,12 +89,6 @@ jobs:
       - name: Настройка PATH для Qt на macOS
         if: runner.os == 'macOS'
         run: echo "$(brew --prefix qt)/bin" >> $GITHUB_PATH
-
-      - name: List files in directory
-        if: runner.os == 'Windows'
-        run: |
-          Get-ChildItem -Path "D:/a/_temp/msys64/mingw64/bin" -File
-        shell: pwsh
         
       - name: Сборка проекта на Windows
         if: runner.os == 'Windows'
@@ -89,3 +114,20 @@ jobs:
         with:
           name: build-${{ matrix.os }}
           path: build/
+
+      - name: Добавить версию в артефакты
+        run: echo "${{ needs.versioning.outputs.semver }}" > version.txt
+
+  release:
+    needs: [versioning, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Создать релиз
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: ${{ github.ref == 'refs/heads/patch' }}
+          tag_name: ${{ needs.versioning.outputs.semver }}
+          name: Release ${{ needs.versioning.outputs.semver }}
+          body: |
+            ${{ steps.analyze.outputs.notes }}
+          files: artifacts/*
