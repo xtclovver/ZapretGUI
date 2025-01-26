@@ -6,39 +6,55 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-
 find_package(Qt6 COMPONENTS
   Core
   Gui
   Widgets
   REQUIRED)
 
-set(SOURCES
-        main.cpp
-        mainwindow.cpp
-        configeditordialog.cpp
+# Main library sources
+set(LIB_SOURCES
+    mainwindow.cpp
+    configeditordialog.cpp
 )
 
-set(HEADERS
-        mainwindow.h
-        configeditordialog.h
+set(LIB_HEADERS
+    mainwindow.h
+    configeditordialog.h
 )
 
-set(UI
-        mainwindow.ui
-        configeditordialog.ui
+set(LIB_UI
+    mainwindow.ui
+    configeditordialog.ui
 )
 
-add_executable(ZapretGUI
-        ${SOURCES}
-        ${HEADERS}
-        ${UI}
+# Create a library for shared code
+add_library(ZapretGUILib
+    ${LIB_SOURCES}
+    ${LIB_HEADERS}
+    ${LIB_UI}
 )
-target_link_libraries(ZapretGUI
-  Qt::Core
-  Qt::Gui
+
+target_link_libraries(ZapretGUILib
+  Qt6::Core
+  Qt6::Gui
   Qt6::Widgets
 )
+
+target_include_directories(ZapretGUILib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Main executable
+add_executable(ZapretGUI
+    main.cpp
+)
+
+target_link_libraries(ZapretGUI
+  ZapretGUILib
+)
+
+# Enable testing and add tests subdirectory
+enable_testing()
+#add_subdirectory(tests)
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)
@@ -63,16 +79,16 @@ if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     endif()
     foreach(QT_LIB Core Gui Widgets )
         if (EXISTS "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                    "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
+                    "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
         endif()
         if (NOT EXISTS "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "D:/a/_temp/msys64/mingw64/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
-    endif()
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                    "D:/a/_temp/msys64/mingw64/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
+                    "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
+        endif()
     endforeach(QT_LIB)
 endif()
