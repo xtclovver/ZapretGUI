@@ -156,7 +156,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/patch'
+if: github.event_name == 'push' && github.ref == 'refs/heads/patch'
     steps:
       - uses: actions/checkout@v3
 
@@ -208,12 +208,31 @@ jobs:
         with:
           path: artifacts
 
+      - name: Debug - List downloaded artifacts
+        run: |
+          echo "Listing contents of artifacts:"
+          ls -R artifacts
+          echo "Contents of artifacts/build-Windows:"
+          ls -l artifacts/build-Windows
+          echo "Contents of artifacts/build-Linux:"
+          ls -l artifacts/build-Linux
+          echo "Contents of artifacts/build-macOS:"
+          ls -l artifacts/build-macOS
+
+      - name: Wait for a few seconds
+        run: sleep 10
+
       - name: Copy artifacts to a single directory
         run: |
-          mkdir artifacts/release
+          mkdir -p artifacts/release
           cp artifacts/build-Windows/build-windows-latest.zip artifacts/release/
           cp artifacts/build-Linux/build-ubuntu-latest.zip artifacts/release/
           cp artifacts/build-macOS/build-macos-latest.zip artifacts/release/
+
+      - name: Debug - List copied artifacts
+        run: |
+          echo "Listing contents of artifacts/release:"
+          ls -l artifacts/release
 
       - name: Create a GitHub pre-release
         uses: softprops/action-gh-release@v1
