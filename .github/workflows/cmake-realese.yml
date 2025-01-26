@@ -96,6 +96,7 @@ jobs:
 
   release:
     needs: build
+    permissions: write-all
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
@@ -129,6 +130,7 @@ jobs:
 
   pre-release:
     needs: build
+    permissions: write-all
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/patch'
     steps:
