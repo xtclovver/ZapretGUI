@@ -96,7 +96,6 @@ jobs:
           cd build/release
           zip -r ../../build-${{ runner.os }}.zip .
 
-      # Выгрузка артефактов
       - name: Выгрузка артефактов
         uses: actions/upload-artifact@v3
         with:
@@ -134,9 +133,9 @@ jobs:
       - name: Copy artifacts to a single directory
         run: |
           mkdir artifacts/release
-          cp artifacts/build-Windows/build-windows-latest.zip artifacts/release/
-          cp artifacts/build-Linux/build-ubuntu-latest.zip artifacts/release/
-          cp artifacts/build-macOS/build-macos-latest.zip artifacts/release/
+          cp artifacts/build-Windows/build-Windows.zip artifacts/release/build-windows-latest.zip
+          cp artifacts/build-Linux/build-Linux.zip artifacts/release/build-ubuntu-latest.zip
+          cp artifacts/build-macOS/build-macOS.zip artifacts/release/build-macos-latest.zip
 
       - name: Create a GitHub release
         uses: softprops/action-gh-release@v1
@@ -208,31 +207,12 @@ jobs:
         with:
           path: artifacts
 
-      - name: Debug - List downloaded artifacts
-        run: |
-          echo "Listing contents of artifacts:"
-          ls -R artifacts
-          echo "Contents of artifacts/build-Windows:"
-          ls -l artifacts/build-Windows
-          echo "Contents of artifacts/build-Linux:"
-          ls -l artifacts/build-Linux
-          echo "Contents of artifacts/build-macOS:"
-          ls -l artifacts/build-macOS
-
-      - name: Wait for a few seconds
-        run: sleep 10
-
       - name: Copy artifacts to a single directory
         run: |
           mkdir -p artifacts/release
           cp artifacts/build-Windows/build-Windows.zip artifacts/release/build-windows-latest.zip
           cp artifacts/build-Linux/build-Linux.zip artifacts/release/build-ubuntu-latest.zip
           cp artifacts/build-macOS/build-macOS.zip artifacts/release/build-macos-latest.zip
-
-      - name: Debug - List copied artifacts
-        run: |
-          echo "Listing contents of artifacts/release:"
-          ls -l artifacts/release
 
       - name: Create a GitHub pre-release
         uses: softprops/action-gh-release@v1
